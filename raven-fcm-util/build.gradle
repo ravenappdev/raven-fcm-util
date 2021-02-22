@@ -20,7 +20,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0.1"
+        versionName "1.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -62,7 +62,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:21.0.1'
 
     //api project(':raven-android-sdk')
-    api 'com.github.ravenappdev:raven-android-sdk:1.0.1'
+    api 'com.github.ravenappdev:raven-android-sdk:1.0.2'
 }
 
 // Because the components are created only during the afterEvaluate phase, you must
@@ -78,7 +78,7 @@ afterEvaluate {
                 // You can then customize attributes of the publication as shown below.
                 groupId = 'com.raven'
                 artifactId = 'raven-fcm-util'
-                version = '1.0.1'
+                version = '1.0.2'
             }
         }
     }
