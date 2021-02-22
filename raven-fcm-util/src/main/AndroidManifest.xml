@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.raven.ravenfcmutil">
+
+    <application>
+        <!-- FCM Related -->
+        <service
+            android:name="com.raven.ravenfcmutil.notification.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="com.raven.ravenfcmutil.notification.NotificationDismissedReceiver"
+            android:exported="false" >
+        </receiver>
+
+        <receiver
+            android:name="com.raven.ravenfcmutil.notification.NotificationClickReceiver"
+            android:exported="false" >
+        </receiver>
+    </application>
+</manifest>

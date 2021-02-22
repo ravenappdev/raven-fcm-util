@@ -1,0 +1,4 @@
+//include ':raven-android-sdk'
+//project(':raven-android-sdk').projectDir = new File(settingsDir, '../raven-android-sdk/raven-android-sdk')
+include ':raven-fcm-util'
+rootProject.name = "FcmUtil"
