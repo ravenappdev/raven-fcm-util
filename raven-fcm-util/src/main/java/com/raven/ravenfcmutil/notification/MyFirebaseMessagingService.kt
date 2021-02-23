@@ -3,16 +3,14 @@ package com.raven.ravenfcmutil.notification
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.FutureTarget
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -30,19 +28,27 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if (remoteMessage.data.isNotEmpty()) {
-            val id = remoteMessage.data[RavenSdk.RAVEN_NOTIFICATION_ID]
-            sendNotification(id, remoteMessage.data["title"], remoteMessage.data["body"],
-                remoteMessage.data["click_action"], remoteMessage.data["large_icon"], remoteMessage.data["big_picture"])
+
+            val notificationId = remoteMessage.data[RavenSdk.RAVEN_NOTIFICATION_ID]
 
             //update status to raven that the message is delivered
-            id?.let { RavenSdk.updateStatus(it, Status.DELIVERED) }
+            notificationId?.let { RavenSdk.updateStatus(notificationId, Status.DELIVERED) }
+
+            sendNotification(
+                notificationId,
+                remoteMessage.data["title"],
+                remoteMessage.data["body"],
+                remoteMessage.data["click_action"],
+                remoteMessage.data["large_icon"],
+                remoteMessage.data["big_picture"]
+            )
         }
     }
 
 
     override fun onDeletedMessages() {
         super.onDeletedMessages()
-        //notify be to fetch long pending messages
+        //notify to fetch long pending messages
     }
 
 
@@ -54,30 +60,59 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     }
 
 
-    private fun sendNotification(ravenNotificationId: String?,
-                                 title: String?, messageBody: String?, clickAction: String?,
-                                 largeIcon: String? = null, bigPicture: String? = null) {
+    private fun sendNotification(
+        ravenNotificationId: String?,
+        title: String?, messageBody: String?, clickAction: String?,
+        largeIcon: String? = null, bigPicture: String? = null
+    ) {
 
         var style: NotificationCompat.Style = NotificationCompat.BigTextStyle().bigText(messageBody)
 
         //fetch largeicon and bigpicture
         if (bigPicture != null && largeIcon != null) {
-            coroutineScope.launch(Dispatchers.Main) {
+            coroutineScope.launch {
+
                 val largeIconBitmap = loadImageAsBitmap(largeIcon)
                 val bigPictureBitmap = loadImageAsBitmap(bigPicture)
-                style = NotificationCompat.BigPictureStyle().bigPicture(bigPictureBitmap).bigLargeIcon(null)
-                notify(ravenNotificationId, title, messageBody, clickAction, largeIconBitmap, style)
+                style = NotificationCompat.BigPictureStyle().bigPicture(bigPictureBitmap).bigLargeIcon(
+                    null
+                )
+
+                withContext(Dispatchers.Main) {
+                    notify(
+                        ravenNotificationId,
+                        title,
+                        messageBody,
+                        clickAction,
+                        largeIconBitmap,
+                        style
+                    )
+                }
             }
         } else if (bigPicture != null) {
-            coroutineScope.launch(Dispatchers.Main) {
+            coroutineScope.launch {
                 val bigPictureBitmap = loadImageAsBitmap(bigPicture)
-                style = NotificationCompat.BigPictureStyle().bigPicture(bigPictureBitmap).bigLargeIcon(null)
-                notify(ravenNotificationId, title, messageBody, clickAction, null, style)
+                style = NotificationCompat.BigPictureStyle().bigPicture(bigPictureBitmap).bigLargeIcon(
+                    null
+                )
+
+                withContext(Dispatchers.Main) {
+                    notify(ravenNotificationId, title, messageBody, clickAction, null, style)
+                }
             }
         } else if (largeIcon != null) {
-            coroutineScope.launch(Dispatchers.Main) {
+            coroutineScope.launch {
                 val largeIconBitmap = loadImageAsBitmap(largeIcon)
-                notify(ravenNotificationId, title, messageBody, clickAction, largeIconBitmap, style)
+                withContext(Dispatchers.Main) {
+                    notify(
+                        ravenNotificationId,
+                        title,
+                        messageBody,
+                        clickAction,
+                        largeIconBitmap,
+                        style
+                    )
+                }
             }
         } else {
             notify(ravenNotificationId, title, messageBody, clickAction, null, style)
@@ -85,13 +120,17 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     }
 
 
-    private fun notify(ravenNotificationId: String?,
-                       title: String?, messageBody: String?, clickAction: String?,
-                       largeIcon: Bitmap? = null, style: NotificationCompat.Style? = null) {
+    private fun notify(
+        ravenNotificationId: String?,
+        title: String?, messageBody: String?, clickAction: String?,
+        largeIcon: Bitmap? = null, style: NotificationCompat.Style? = null
+    ) {
+
+        //
 
         val channelId = "Default"
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.color.design_default_color_on_primary)
+            .setSmallIcon(getSmallIcon())
             .setContentTitle(title)
             .setContentText(messageBody)
             .setLargeIcon(largeIcon)
@@ -104,27 +143,46 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
 
         // Since android Oreo notification channel is needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Default Channel",
-                NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(
+                channelId, "Default Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(Date().time.toInt() /* ID of notification */, notificationBuilder.build())
+        notificationManager.notify(
+            Date().time.toInt() /* ID of notification */,
+            notificationBuilder.build()
+        )
     }
 
 
     private fun createOnDismissedIntent(context: Context, notificationId: String?): PendingIntent? {
         val intent = Intent(context, NotificationDismissedReceiver::class.java)
         intent.putExtra(RavenSdk.RAVEN_NOTIFICATION_ID, notificationId)
-        return PendingIntent.getBroadcast(context.applicationContext, 100, intent, 0)
+        return PendingIntent.getBroadcast(
+            context.applicationContext,
+            Date().time.toInt(),
+            intent,
+            0
+        )
     }
 
 
-    private fun createOnClickedIntent(context: Context, notificationId: String?, clickAction: String?): PendingIntent? {
+    private fun createOnClickedIntent(
+        context: Context,
+        notificationId: String?,
+        clickAction: String?
+    ): PendingIntent? {
         val intent = Intent(context, NotificationClickReceiver::class.java)
         intent.putExtra(RavenSdk.RAVEN_NOTIFICATION_ID, notificationId)
         intent.putExtra("click_action", clickAction)
-        return PendingIntent.getBroadcast(context.applicationContext, 101, intent, 0)
+        return PendingIntent.getBroadcast(
+            context.applicationContext,
+            Date().time.toInt(),
+            intent,
+            0
+        )
     }
 
 
@@ -147,6 +205,14 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     }
 
 
+    private fun getSmallIcon(): Int {
+        val ai = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+        val bundle = ai.metaData
+        val smallIcon: Int = bundle.getInt("notification_small_icon")
+        return smallIcon
+    }
+
+
     companion object {
 
         /*
@@ -163,7 +229,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
                     // Get new Instance ID token
                     val token: String? = task.result
                     token?.let { RavenSdk.setDeviceToken(it) }
-            })
+                })
         }
 
 
