@@ -5,7 +5,7 @@
     <application>
         <!-- FCM Related -->
         <service
-            android:name="com.raven.ravenfcmutil.notification.MyFirebaseMessagingService"
+            android:name="com.raven.ravenfcmutil.notification.FirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

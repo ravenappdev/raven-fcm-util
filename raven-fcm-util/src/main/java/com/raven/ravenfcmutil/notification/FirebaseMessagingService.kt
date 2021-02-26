@@ -16,12 +16,11 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.raven.ravenandroidsdk.RavenSdk
 import com.raven.ravenandroidsdk.models.Status
-import com.raven.ravenfcmutil.R
 import kotlinx.coroutines.*
 import java.util.*
 
 
-class MyFirebaseMessagingService: FirebaseMessagingService() {
+class FirebaseMessagingService: FirebaseMessagingService() {
 
     //coroutine for downloading images
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
@@ -189,7 +188,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     private suspend fun loadImageAsBitmap(url: String?): Bitmap? {
         return coroutineScope.async {
             try {
-                val futureTarget: FutureTarget<Bitmap?>? = Glide.with(this@MyFirebaseMessagingService)
+                val futureTarget: FutureTarget<Bitmap?>? = Glide.with(this@FirebaseMessagingService)
                     .asBitmap()
                     .load(url)
                     .submit()
